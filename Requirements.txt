@@ -1,1 +1,16 @@
+# System Requirements
+
+This document describes the software, modeling assumptions, and system-level requirements for the nonlinear navigation and guidance simulations.
+
+---
+
+## 1. Software Requirements
+
+- Python 3.9+
+- NumPy
+- Matplotlib
+
+Install dependencies using:
+
+pip install -r requirements.txt
 
