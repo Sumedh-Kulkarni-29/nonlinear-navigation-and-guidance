@@ -1,6 +1,7 @@
 import numpy as np
 
-def compute_guidance(x, y, x_goal, y_goal,
+def compute_guidance(x, y,
+                     x_goal, y_goal,
                      obstacles,
                      rho0, eta, lam,
                      beta, epsilon):
@@ -14,7 +15,6 @@ def compute_guidance(x, y, x_goal, y_goal,
     rho_list = []
 
     for (xo, yo) in obstacles:
-
         rho = np.sqrt((x - xo)**2 + (y - yo)**2)
         rho_list.append(rho)
 
