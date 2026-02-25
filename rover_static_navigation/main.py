@@ -6,34 +6,27 @@ from controller import PID
 from planner import compute_guidance
 from analysis import compute_path_length
 
-# -------------------------
 # Time
-# -------------------------
 t = np.linspace(0, 200, 10000)
 dt = t[1] - t[0]
 
-# -------------------------
 # States
-# -------------------------
 x = np.zeros_like(t)
 y = np.zeros_like(t)
 theta = np.zeros_like(t)
 v = np.zeros_like(t)
 
+# Logs
 omega_log = np.zeros_like(t)
 a_log = np.zeros_like(t)
 distance_log = np.zeros_like(t)
 clearance = np.zeros_like(t)
 
-# -------------------------
 # Goal
-# -------------------------
 x_goal = 800
 y_goal = 800
 
-# -------------------------
 # Obstacles
-# -------------------------
 obstacles = [(400, 400), (600, 300), (300, 650)]
 
 rho0 = 120
@@ -42,22 +35,16 @@ lam = 1.0
 beta = 8000
 epsilon = 1e-2
 
-# -------------------------
 # Limits
-# -------------------------
 v_max = 40
 a_max = 15
 omega_max = 3
 
-# -------------------------
 # Controllers
-# -------------------------
 heading_pid = PID(5, 0, 1, omega_max)
 velocity_pid = PID(2, 0, 0.5, a_max)
 
-# -------------------------
 # Simulation Loop
-# -------------------------
 for i in range(1, len(t)):
 
     Fx, Fy, rho_min = compute_guidance(
@@ -70,8 +57,14 @@ for i in range(1, len(t)):
 
     clearance[i] = rho_min
 
-    distance_log[i] = np.sqrt((x_goal - x[i-1])**2 +
-                              (y_goal - y[i-1])**2)
+    distance_log[i] = np.sqrt(
+        (x_goal - x[i-1])**2 +
+        (y_goal - y[i-1])**2
+    )
+
+    if distance_log[i] < 2:
+        end_index = i
+        break
 
     theta_desired = np.arctan2(Fy, Fx)
 
@@ -94,9 +87,19 @@ for i in range(1, len(t)):
         a, omega, dt, v_max
     )
 
-# -------------------------
-# Plots
-# -------------------------
+else:
+    end_index = len(t)
+
+# Slice arrays
+t = t[:end_index]
+x = x[:end_index]
+y = y[:end_index]
+theta = theta[:end_index]
+v = v[:end_index]
+omega_log = omega_log[:end_index]
+a_log = a_log[:end_index]
+distance_log = distance_log[:end_index]
+clearance = clearance[:end_index]
 
 # Trajectory
 plt.figure(figsize=(6,6))
@@ -104,8 +107,7 @@ plt.plot(x, y, label="Rover Path")
 plt.scatter(x_goal, y_goal, marker='x', color='red', label="Goal")
 
 for (xo, yo) in obstacles:
-    circle = plt.Circle((xo, yo), rho0,
-                        fill=False, linestyle='--')
+    circle = plt.Circle((xo, yo), rho0, fill=False, linestyle='--')
     plt.gca().add_patch(circle)
 
 plt.title("Rover Trajectory")
@@ -116,10 +118,12 @@ plt.grid(True)
 plt.legend()
 plt.show()
 
-# Distance
+# Distance to goal
 plt.figure()
 plt.plot(t, distance_log)
 plt.title("Distance to Goal vs Time")
+plt.xlabel("Time")
+plt.ylabel("Distance")
 plt.grid(True)
 plt.show()
 
@@ -127,6 +131,8 @@ plt.show()
 plt.figure()
 plt.plot(t, v)
 plt.title("Velocity vs Time")
+plt.xlabel("Time")
+plt.ylabel("Velocity")
 plt.grid(True)
 plt.show()
 
@@ -134,6 +140,8 @@ plt.show()
 plt.figure()
 plt.plot(t, theta)
 plt.title("Heading vs Time")
+plt.xlabel("Time")
+plt.ylabel("Theta (rad)")
 plt.grid(True)
 plt.show()
 
@@ -141,6 +149,8 @@ plt.show()
 plt.figure()
 plt.plot(t, omega_log)
 plt.title("Angular Velocity vs Time")
+plt.xlabel("Time")
+plt.ylabel("Omega")
 plt.grid(True)
 plt.show()
 
@@ -148,6 +158,8 @@ plt.show()
 plt.figure()
 plt.plot(t, a_log)
 plt.title("Acceleration vs Time")
+plt.xlabel("Time")
+plt.ylabel("Acceleration")
 plt.grid(True)
 plt.show()
 
@@ -155,8 +167,9 @@ plt.show()
 plt.figure()
 plt.plot(t, clearance)
 plt.title("Minimum Clearance vs Time")
+plt.xlabel("Time")
+plt.ylabel("Clearance")
 plt.grid(True)
 plt.show()
 
-print("Path Length:", compute_path_length(x, y))
 print("Path Length:", compute_path_length(x, y))
