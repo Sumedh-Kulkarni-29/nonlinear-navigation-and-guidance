@@ -173,3 +173,69 @@ plt.grid(True)
 plt.show()
 
 print("Path Length:", compute_path_length(x, y))
+# ============================================================
+# Trajectory Variation with Lambda
+# ============================================================
+
+lambda_values = [0, 2000, 8000, 15000]
+
+plt.figure(figsize=(7,7))
+
+for lam_test in lambda_values:
+
+    x_test = np.zeros_like(t)
+    y_test = np.zeros_like(t)
+    theta_test = np.zeros_like(t)
+    v_test = np.zeros_like(t)
+
+    for i in range(1, len(t)):
+
+        Fx, Fy, rho_min = compute_guidance(
+            x_test[i-1], y_test[i-1],
+            x_goal, y_goal,
+            obstacles,
+            rho0, eta, lam_test,
+            beta, epsilon
+        )
+
+        distance = np.sqrt(
+            (x_goal - x_test[i-1])**2 +
+            (y_goal - y_test[i-1])**2
+        )
+
+        if distance < 2:
+            break
+
+        theta_desired = np.arctan2(Fy, Fx)
+
+        error_theta = np.arctan2(
+            np.sin(theta_desired - theta_test[i-1]),
+            np.cos(theta_desired - theta_test[i-1])
+        )
+
+        omega = heading_pid.compute(error_theta, dt)
+
+        v_desired = min(np.sqrt(Fx**2 + Fy**2), v_max)
+        error_v = v_desired - v_test[i-1]
+        a = velocity_pid.compute(error_v, dt)
+
+        x_test[i], y_test[i], theta_test[i], v_test[i] = update_state(
+            x_test[i-1], y_test[i-1], theta_test[i-1], v_test[i-1],
+            a, omega, dt, v_max
+        )
+
+    plt.plot(x_test[:i], y_test[:i], label=f"lambda = {lam_test}")
+
+# Draw obstacles
+for (xo, yo) in obstacles:
+    circle = plt.Circle((xo, yo), rho0, fill=False)
+    plt.gca().add_patch(circle)
+
+plt.scatter(x_goal, y_goal, marker='x')
+plt.title("Trajectory Variation with Lambda")
+plt.xlabel("X")
+plt.ylabel("Y")
+plt.axis("equal")
+plt.grid(True)
+plt.legend()
+plt.show()
