@@ -239,3 +239,105 @@ plt.axis("equal")
 plt.grid(True)
 plt.legend()
 plt.show()
+
+# ============================================================
+# Magnitude-Based Clearance Weighting Comparison
+# ============================================================
+
+print("\nRunning Magnitude-Based Clearance Weighting Comparison...\n")
+
+x_weight = np.zeros_like(t)
+y_weight = np.zeros_like(t)
+theta_weight = np.zeros_like(t)
+v_weight = np.zeros_like(t)
+
+clearance_weight = np.zeros_like(t)
+
+for i in range(1, len(t)):
+
+    Fx, Fy, rho_min = compute_guidance(
+        x_weight[i-1], y_weight[i-1],
+        x_goal, y_goal,
+        obstacles,
+        rho0, eta, lam,
+        beta, epsilon
+    )
+
+    clearance_weight[i] = rho_min
+
+    distance = np.sqrt(
+        (x_goal - x_weight[i-1])**2 +
+        (y_goal - y_weight[i-1])**2
+    )
+
+    if distance < 2:
+        break
+
+    # -----------------------------
+    # NEW: Magnitude-Based Weight
+    # -----------------------------
+    rep_magnitude = np.sqrt(Fx**2 + Fy**2)
+    weight = 1 + 0.002 * rep_magnitude
+
+    Fx_mod = Fx / weight
+    Fy_mod = Fy / weight
+
+    theta_desired = np.arctan2(Fy_mod, Fx_mod)
+
+    error_theta = np.arctan2(
+        np.sin(theta_desired - theta_weight[i-1]),
+        np.cos(theta_desired - theta_weight[i-1])
+    )
+
+    omega = heading_pid.compute(error_theta, dt)
+
+    v_desired = min(np.sqrt(Fx_mod**2 + Fy_mod**2), v_max)
+    error_v = v_desired - v_weight[i-1]
+
+    a = velocity_pid.compute(error_v, dt)
+
+    x_weight[i], y_weight[i], theta_weight[i], v_weight[i] = update_state(
+        x_weight[i-1], y_weight[i-1],
+        theta_weight[i-1], v_weight[i-1],
+        a, omega, dt, v_max
+    )
+
+# ============================================================
+# Plot: Baseline vs Weighted Trajectory
+# ============================================================
+
+plt.figure(figsize=(7,7))
+plt.plot(x, y, label="Baseline")
+plt.plot(x_weight[:i], y_weight[:i], label="Magnitude Weighted")
+
+for (xo, yo) in obstacles:
+    circle = plt.Circle((xo, yo), rho0, fill=False)
+    plt.gca().add_patch(circle)
+
+plt.scatter(x_goal, y_goal, marker='x')
+plt.title("Baseline vs Magnitude-Weighted Clearance")
+plt.xlabel("X")
+plt.ylabel("Y")
+plt.axis("equal")
+plt.grid(True)
+plt.legend()
+plt.show()
+
+
+# ============================================================
+# Plot: Clearance Comparison
+# ============================================================
+
+plt.figure()
+plt.plot(t[:len(clearance)], clearance, label="Baseline")
+plt.plot(t[:len(clearance_weight)], clearance_weight, label="Weighted")
+plt.title("Minimum Clearance Comparison")
+plt.xlabel("Time")
+plt.ylabel("Clearance")
+plt.grid(True)
+plt.legend()
+plt.show()
+
+
+print("Baseline Path Length:", compute_path_length(x, y))
+print("Weighted Path Length:", compute_path_length(x_weight[:i], y_weight[:i]))
