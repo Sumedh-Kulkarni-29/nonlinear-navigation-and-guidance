@@ -7,7 +7,7 @@ def compute_safest_guidance(
     obstacles,
     rho0, eta, lam,
     beta, epsilon,
-    safety_gain=0.002
+    safety_gain=0.2
 ):
     """
     Magnitude-weighted clearance guidance.
