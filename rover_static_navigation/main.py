@@ -103,6 +103,10 @@ clearance = clearance[:end_index]
 # ============================================================
 # SAFEST PATH SIMULATION
 # ============================================================
+# Reinitialize PID controllers for fair comparison
+heading_pid = PID(5, 0, 1, omega_max)
+velocity_pid = PID(2, 0, 0.5, a_max)
+
 x_safe = np.zeros_like(t)
 y_safe = np.zeros_like(t)
 theta_safe = np.zeros_like(t)
